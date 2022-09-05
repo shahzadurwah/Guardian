@@ -1,45 +1,58 @@
 <template>
   <div class="container-fluid">
-    <div class="row justify-content-center">
-      <!-- col 1 start -->
-      <div class="col-8 text-center mt-5 white">
-        <div class="title">
-          <h1>Guardian Search</h1>
-        </div>
-        <div class="inputdata">
-          <form>
-            <i class="fa fa-search"></i>
-            <input type="text" v-model="inputdata" />
-            <button class="btn btn-primary radius pr-3" @click.prevent="Search">
-              Search
-            </button>
-          </form>
-        </div>
-        <div class="image loading" v-if="dataLoading">
-          <!-- <img src="../assets/load.gif" class="img-fluid" /> -->
-        </div>
-      </div>
-      <!-- col 2 start -->
-      <div class="col-8 pt4 white" v-show="dataLoad">
-        <div class="subtitle">
-          <h3>{{ notFound }}</h3>
-          <hr class="hrb" />
-        </div>
-      </div>
-      <div class="col-8 pt4 white" v-show="dataLoad">
-        <div class="subtitle subtitle-main" v-for="da in arrayData" :key="da">
-          <h3 class="text-center">{{ da.sectionName }}</h3>
-          <div class="content">
-            <div class="para">
-              <p>
-                <a :href="`${da.webUrl}`" target="_blank">{{ da.webTitle }}</a>
-              </p>
+    <Navbar></Navbar>
+    <div class="row justify-content-center " >
+      <div
+        class="col-sm-12 col-md-10 border"
+        style="background: white; margin-top: 3rem; border-radius: 30px; box-shadow: rgba(50, 50, 93, 0.25) 0px 50px 100px -20px, rgba(0, 0, 0, 0.3) 0px 30px 60px -30px, rgba(10, 37, 64, 0.35) 0px -2px 6px 0px inset;"
+      >
+        <!-- form start -->
+        <div class="row justify-content-center pt-3 pb-3">
+          <div class="col-sm-12 col-md-8 d-flex justify-content-center">
+            <div class="input-group mb-3 mt-3">
+              <input
+                type="text"
+                class="form-control"
+                placeholder="Search Article"
+                aria-label="Recipient's username"
+                aria-describedby="button-addon2"
+                v-model="inputdata"
+                @keypress.enter="Search"
+              />
+              <button
+                class="btn btn-outline-secondary"
+                type="button"
+                id="button-addon2"
+                @click="Search"
+              >
+                Button
+              </button>
             </div>
-            <div class="date text-gray">
-              <small>{{ formateDate(da.webPublicationDate) }}</small>
+          </div>
+          <!-- pitcher div start -->
+          <div class="col-sm-12 col-md-8 d-flex justify-content-center" v-if="isActive">
+            <div class="card">
+              <div class="card-body">
+                <img src="../assets/loading.gif" alt="">
+
+              </div>
+            </div>
+          </div>
+          <!-- pitcher div end -->
+          <div class="col-sm-12 col-md-8 d-flex justify-content-center" v-for="d in business" :key="d">
+            <div class="card" style="width: 100%; box-shadow: rgba(50, 50, 93, 0.25) 0px 50px 100px -20px, rgba(0, 0, 0, 0.3) 0px 30px 60px -30px, rgba(10, 37, 64, 0.35) 0px -2px 6px 0px inset;">
+              <div class="card-body">
+                <h2 class="card-title text-center" style="color:lightskyblue">{{d.sectionName}}</h2>
+                <h5 class="card-text">
+                  {{d.webTitle}}
+                </h5>
+                <a :href="`${d.webUrl}`" target="_blank"  class="btn btn-primary">Visit</a>
+              </div>
             </div>
           </div>
         </div>
+
+        <!-- form end -->
       </div>
     </div>
   </div>
@@ -47,138 +60,76 @@
 
 <script>
 import axios from "axios";
-import moment from 'moment'
+import Navbar from "./Navbar.vue";
+
 export default {
   name: "Home",
   data() {
     return {
       inputdata: "",
-      dataLoading: false,
-      dataLoad: false,
-      notFound: "Result",
-      notFoundfal: false,
-      arrayData: [],
+      business: [],
+      isActive:false
     };
   },
+  components:{
+    Navbar
+  },
   methods: {
-    formateDate(value) {
-      if (value) {
-        return moment(String(value)).format('MM/DD/YYYY');
-      }
-    },
-    async Search() {
-      var data = [];
+    Search() {
+      this.isActive=true;
+      
+      axios
+        .get(
+          `https://content.guardianapis.com/search?q=${this.inputdata}&api-key=test`
+        )
+        .then((response) => {
+          return response;
+        })
+        .then((data) => {
+          var arr = data.data.response.results;
+          if(arr<=0){
+            this.isActive=false;
+            return alert("Record Not Found !!")
+            
+          }
+          var temp=[];
+          this.isActive=false
 
-      this.dataLoading = true;
+          arr.forEach((da)=>{
+            if(da.sectionName=="Film"){
+              temp.push(arr);
+              
+            }
+          })
 
-      var data = await axios.get(
-        `https://content.guardianapis.com/search?q=${this.inputdata}&api-key=test`
-      );
 
-      if (data) {
-        this.dataLoading = false;
+         this.business=arr;
 
-        this.dataLoad = true;
-        this.arrayData = data.data.response.results;
-        this.notFound = "Result";
-        console.log(this.arrayData);
-      }
-      if (this.arrayData == "" || this.arrayData == null) {
-        this.notFound = "Record Not Found";
-      }
-      // this.notFound=''
-      this.inputdata = "";
+          console.log(temp);
+          console.log(i);
+          console.log(arr);
+        });
+        this.inputdata="";
+
+      // `https://content.guardianapis.com/search?q=${this.inputdata}&api-key=test`
     },
   },
 };
 </script>
 
 <style>
-.loading {
-  background: transparent
-    url("https://miro.medium.com/max/882/1*9EBHIOzhE1XfMYoKz1JcsQ.gif") center
-    no-repeat;
-  height: 400px;
-  width: 400px;
-}
-.image {
-  width: 200px;
-  height: 150px;
-  margin: 1rem auto;
-}
-.image img {
-  width: 100%;
-  height: 100%;
-  background-size: cover;
-  background-position: center;
-}
-.white {
-  background-color: #fff;
-  border-radius: 10px;
-}
-.white h1 {
-  font-size: 60px;
-  padding: 20px 0;
-  color: blue;
-}
-.inputdata {
-  /* border: 2px solid black; */
-  max-width: 400px;
-  margin: 1rem auto;
-  justify-content: center;
-}
-form {
-  display: flex;
-  border: 2px solid lightblue;
-  border-radius: 10px;
-  padding: 5px;
-}
-
-input {
-  flex-grow: 2;
-  border: none;
-  color: blue;
-  font-size: 20px;
-}
-input:focus {
-  outline: none;
-}
-i {
-  padding-right: 10px;
-  padding-left: 10px;
-  font-size: 10px;
-  text-align: center;
-  margin-top: 10px;
-}
-
-.subtitle {
-  padding: 10px 20px;
-}
-.subtitle h3 {
-  color: gray;
-}
-.hrb {
-  border: 1px solid gray;
-}
-.subtitle-main h3 {
-  background-color: lightblue;
-  color: rgba(0, 0, 255, 0.511);
-  padding: 10px 0;
-  border-radius: 10px;
-}
-.content {
-  display: flex;
-  justify-content: space-between;
-  padding: 0px 20px;
-  margin-top: 1rem;
-  align-items: center;
-  border-radius: 10px;
-  background-color: rgba(76, 185, 221, 0.727);
-}
-.content .para {
-  margin-top: 1rem;
-  color: blue;
-  font-size: 15px;
-  font-weight: bold;
+.form-control:focus {
+    border-color: none;
+    box-shadow: none;
+    } 
+    
+img{
+  height: 200px;
+  object-fit: cover;
+  object-position: center;
+  border-radius: 50%;
+  width:200px
+  
+ 
 }
 </style>
